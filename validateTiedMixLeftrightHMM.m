@@ -1,5 +1,5 @@
 function results = validateTiedMixLeftrightHMM( data, nfo, numHidStates, ...
-    selfTransProb, numMixtures, covType, maxIter)
+    selfTransProb, numMixtures, covType, maxIter, standardization, verbose)
 %validedTiedMixLeftrightHMM Uses a LOSOCV to validate a tied mix leftright
 %HMM with the indicated parameters:
 %   numHidStates
@@ -26,17 +26,28 @@ for i = 1:length(subjects)
 
     display(['Sbj ', num2str(i), '. Total data: ', num2str(length(data)), ', (', ...
         num2str(sum(indicesTr)/length(data)), '% train, ', num2str(sum(indicesTe)/length(data)), '% test).']);
-
+    
+    dataTr = data(indicesTr);
+    dataTe = data(indicesTe);
+    
+    if standardization
+        [dataTr, M, V] = standardizeData(dataTr);
+        dataTe = standardizeData(dataTe, M, V);
+    end
+    
     rng(74);
-    [predsTe, likesTe, pathsTe] = predictTiedMixLeftrightHMM(data(indicesTr), data(indicesTe), ...
+    [predsTe, likesTe, pathsTe] = predictTiedMixLeftrightHMM( ...
+                dataTr, dataTe, ...
                 nfo(:,indicesTr), nfo(:,indicesTe), ...
-                numHidStates, selfTransProb, numMixtures, covType, maxIter);
+                numHidStates, selfTransProb, numMixtures, covType, maxIter, verbose);
 
     preds(indicesTe) = predsTe;
     likes(indicesTe) = {likesTe};
     paths(indicesTe) = pathsTe;
 
     [~, A, C] = accuracy(nfo(1,indicesTe), predsTe);
+    display(mean(A));
+    
     outsampleAccs(C,i) = A;
 end
 

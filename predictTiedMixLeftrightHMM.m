@@ -1,5 +1,5 @@
 function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obsTe, infoTr, infoTe, ...
-    numHidStates, selfTransProb, numMixtures, covType, maxIters)
+    numHidStates, selfTransProb, numMixtures, covType, maxIters, verbose)
 %continuousLeftrightHMMTest Test the performance of a continuous left-right HMM classifying data.
 %       data - A cell array of matrices representing NxP temporal sequences. 
 %   N time instances and P features.
@@ -21,29 +21,47 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
     
     actionsTr = unique(infoTr(1,:));
     lambdas = cell(length(actionsTr),1);
+    
+    time = 0;
+    
     for m = 1:length(actionsTr)
         seqsTr = obsTr(infoTr(1,:) == actionsTr(m));
         
         seqsTrSrl = cell2mat(seqsTr);
         O = size(seqsTrSrl,1);
         success = 0;
+        tries = 0;
+        tic;
         while ~success
             try
-                [lambda0.mu, lambda0.Sigma] = mixgauss_init(numHidStates*numMixtures(m), seqsTrSrl, 'diag');
+                [lambda0.mu, lambda0.Sigma] = mixgauss_init(numHidStates*numMixtures(m), seqsTrSrl, covType);
                 success = 1;
             catch err
+                tries = tries + 1;
                 success = 0;
             end
         end
+        t1 = toc;
+        
         lambda0.mu = reshape(lambda0.mu, [O numHidStates numMixtures(m)]);
         lambda0.Sigma = reshape(lambda0.Sigma, [O O numHidStates numMixtures(m)]);
         lambda0.mixmat = mk_stochastic(rand(numHidStates,numMixtures(m)));
         
+        tic;
         [~, lambdas{m}.Pi, lambdas{m}.A, lambdas{m}.mu, lambdas{m}.Sigma, lambdas{m}.mixmat] = mhmm_em( ...
             seqsTr, lambda0.Pi, lambda0.A, ...
             lambda0.mu, lambda0.Sigma, lambda0.mixmat, ...
             'max_iter', maxIters, 'verbose', 0, 'cov_type', covType);
+        t2 = toc;
+        
+        mtime = t1 + t2;
+        if verbose
+            display(['Model ', num2str(m),' training took ', num2str(mtime), ...
+                ' secs and ', num2str(tries), ' non-psds matrices.']);
+         end
+        time = time + mtime;
     end
+    display(['All models training took ', num2str(time), ' secs.']);
 
     predsTe = zeros(1,size(infoTe,2));
     loglikesTe = zeros(length(lambdas),size(infoTe,2));

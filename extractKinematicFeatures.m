@@ -26,7 +26,7 @@ for i = 1:length(data)
     % Build a joint representation (early feature fusion)
     seq = [normSktSeq(~normJointInds,:); velocities; ...
         leftElbowAngles; rightElbowAngles; leftShoulderAngles; rightShoulderAngles];
-    seq(seq == 0) = 10e-4;
+%     seq(seq == 0) = 10e-4;
     dataFts{i} = seq;
 end
 

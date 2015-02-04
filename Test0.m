@@ -5,6 +5,7 @@ rmpath(genpath('../Libs/HMMall/'));
 addpath('featuring/');
 addpath('filtering/');
 addpath('validating/');
+addpath('normalizing/');
 
 addpath(genpath('../MSRAction3DSkeletonReal3D/'));
 addpath(genpath('output/'));
@@ -22,7 +23,7 @@ catch
     actions, subjects, examples, useConfidences);
 
     % Filter noise
-    data = movingAverageFilter(data, movAvgLag);
+%     data = movingAverageFilter(data, movAvgLag);
     % Extract features instead of RAW data
     data = extractKinematicFeatures(data, velOffset);
     
@@ -32,11 +33,11 @@ end
 %% Test 0
 % The same no. mixtures for each class model.
 
-numMixtures = [1 3 5 7 9 11 13 15]; % test different values
+numMixtures = [1];%5 3 5 7 9 11 13 15]; % test different values
 
-parfor i = 1:size(numMixtures,2)
+for i = 1:size(numMixtures,2)
     results = validateTiedMixLeftrightHMM(data, nfo, numHidStates, selfTransProb, ...
-        repmat(numMixtures(i), length(actions), 1), covType, maxIter);
+        repmat(numMixtures(i), length(actions), 1), covType, maxIter, standardization, verbose);
     
     save(sprintf('output/results/T0_%d-%.2f-%d_%s.mat', ...
         numHidStates, selfTransProb, numMixtures(i), datestr(now, 30)), 'results');

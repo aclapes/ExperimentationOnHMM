@@ -11,13 +11,13 @@ addpath(genpath('output/'));
 %% Parametrization
 
 parametrize;
-% L = actions; % multi-class
+L = actions; % multi-class
 
 % auxL = [ tril(ones(length(actions)/2))+triu(2*ones(length(actions)/2),1), 2*ones(length(actions)/2) ];
 % rng(74);
 % L = flipud( auxL(:,randperm(size(auxL,2))) );
 
-L = [1 2 2 2 2 1 2 2 2 2 2 2 2 2 2 2 2 2 2 2];
+% L = [1 2 2 2 2 1 2 2 2 2 2 2 2 2 2 2 2 2 2 2];
 
 %% Load data
 
@@ -73,14 +73,14 @@ for l = 1:size(L,1)
         display(['Sbj ', num2str(i), '. Total data: ', num2str(length(data)), ', (', ...
             num2str(length(dataTr)/length(data)), '% train, ', num2str(length(dataTe)/length(data)), '% test).']);
 
-        [predsTe, likesTe, pathsTe] = continuousLeftrightHMMTest(dataTr, dataTe, ...
-                    dicinfoTr, dicinfoTe, numHidStates, selfTransProb, numMixtures, covType, maxIters);
+        results = predictTiedMixLeftrightHMM(dataTr, dataTe, ...
+                    dicinfoTr, dicinfoTe, numHidStates, selfTransProb, numMixtures, covType, maxIters, 1);
 
-        preds(indicesTe) = predsTe;
-        likes(indicesTe) = {likesTe};
-        paths(indicesTe) = pathsTe;
-        
-        [~, A, C] = accuracy(dicinfoTe(1,:), predsTe);
+%         preds(indicesTe) = results.predsTe;
+%         likes(indicesTe) = {results.likesTe};
+%         paths(indicesTe) = pathsTe;
+%         
+        [~, A, C] = accuracy(dicinfoTe(1,:), results.predsTe);
         outsampleAccs(C,i) = A;
     end
     
