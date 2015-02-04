@@ -32,9 +32,9 @@ end
 %% Test 0
 % The same no. mixtures for each class model.
 
-numMixtures = [1 3 5 7 9]; % test different values
+numMixtures = [1 3 5 7 9 11 13 15]; % test different values
 
-for i = 1:size(numMixtures,2)
+parfor i = 1:size(numMixtures,2)
     results = validateTiedMixLeftrightHMM(data, nfo, numHidStates, selfTransProb, ...
         repmat(numMixtures(i), length(actions), 1), covType, maxIter);
     
