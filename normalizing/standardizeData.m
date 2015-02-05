@@ -1,18 +1,18 @@
-function [stdData, m_, v_] = standardizeData( data, m, v )
+function [stdData, m_, v_] = standardizeData( data, scale, m, v )
 %STANDARDIZEDATA Summary of this function goes here
 %   Detailed explanation goes here
 
 
 D = cell2mat(data);
 
-if nargin < 2
-    [ZZ, m, v] = zscore(D,0,2);
+if nargin < 3
+    [~, m, v] = zscore(D,0,2);
     m_ = m;
     v_ = v;
 end
 
 C = bsxfun(@minus, D, m);
-Z = bsxfun(@times, C, 1./v);
+Z = bsxfun(@times, C, 1./(scale.*v));
 
 stdData = cell(size(data));
 c = 0;

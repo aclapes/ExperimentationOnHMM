@@ -8,7 +8,10 @@ subjects = [1:10];
 examples = [1:3];
 useConfidences = 0;
 
-standardization = 1;
+standardization = 0;
+scale = 1; % z-score divided by this scale factor
+
+reduction = 1;
 
 %% Filtering
 movAvgLag = 4; % Moving average past frames to take into account ('lag')
@@ -19,6 +22,6 @@ velOffset = 2; % Velocity computation respect to position in 'offset' frames ago
 %% HMM (continuous) model parametrization
 numHidStates = 6;
 selfTransProb = 0.7;
-maxIter = 20;
-covType = 'full';
+maxIter = 50;
+covType = 'diag';
 verbose = 1;

@@ -6,6 +6,7 @@ addpath('featuring/');
 addpath('filtering/');
 addpath('validating/');
 addpath('normalizing/');
+addpath('projection/');
 
 addpath(genpath('../MSRAction3DSkeletonReal3D/'));
 addpath(genpath('output/'));
@@ -16,9 +17,9 @@ parametrize;
 
 %% Load data
 
-try
+if exist('data', 'file')
     load('data');
-catch
+else
     [data, nfo] = loadData('../MSRAction3DSkeletonReal3D/', ...
     actions, subjects, examples, useConfidences);
 
@@ -33,11 +34,12 @@ end
 %% Test 0
 % The same no. mixtures for each class model.
 
-numMixtures = [1];%5 3 5 7 9 11 13 15]; % test different values
+numMixtures = [3]; % 5 7 9 11 13 15]; % test different values
 
 for i = 1:size(numMixtures,2)
     results = validateTiedMixLeftrightHMM(data, nfo, numHidStates, selfTransProb, ...
-        repmat(numMixtures(i), length(actions), 1), covType, maxIter, standardization, verbose);
+        repmat(numMixtures(i), length(actions), 1), covType, maxIter, ...
+        standardization, scale, reduction, verbose);
     
     save(sprintf('output/results/T0_%d-%.2f-%d_%s.mat', ...
         numHidStates, selfTransProb, numMixtures(i), datestr(now, 30)), 'results');

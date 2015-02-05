@@ -1,5 +1,6 @@
 function results = validateTiedMixLeftrightHMM( data, nfo, numHidStates, ...
-    selfTransProb, numMixtures, covType, maxIter, standardization, verbose)
+    selfTransProb, numMixtures, covType, maxIter, ...
+    standardization, scale, reduction, verbose)
 %validedTiedMixLeftrightHMM Uses a LOSOCV to validate a tied mix leftright
 %HMM with the indicated parameters:
 %   numHidStates
@@ -31,8 +32,15 @@ for i = 1:length(subjects)
     dataTe = data(indicesTe);
     
     if standardization
-        [dataTr, M, V] = standardizeData(dataTr);
-        dataTe = standardizeData(dataTe, M, V);
+        %[dataTr, M, V] = standardizeData(dataTr, scale);
+        %dataTe = standardizeData(dataTe, scale, M, V);
+        dataTr = unitarizeData(dataTr,1);
+        dataTe = unitarizeData(dataTe,1);
+    end
+    
+    if reduction < 1
+        [dataTr, E] = dimreduction(dataTr, reduction);
+        dataTe = dimreduction(dataTe, reduction, E);
     end
     
     rng(74);
