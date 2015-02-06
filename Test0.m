@@ -34,7 +34,7 @@ end
 %% Test 0
 % The same no. mixtures for each class model.
 
-numMixtures = [3]; % 5 7 9 11 13 15]; % test different values
+numMixtures = [1]; %3 5 7 9 11 13 15]; % test different values
 
 warning('off','all');
 for i = 1:size(numMixtures,2)

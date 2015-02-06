@@ -8,7 +8,7 @@ subjects = [1:10];
 examples = [1:3];
 useConfidences = 0;
 
-standardization = 1;
+standardization = 0;
 scale = 1; % z-score divided by this scale factor
 
 reduction = 1;
