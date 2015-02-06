@@ -8,7 +8,7 @@ subjects = [1:10];
 examples = [1:3];
 useConfidences = 0;
 
-standardization = 0;
+standardization = 1;
 scale = 1; % z-score divided by this scale factor
 
 reduction = 1;
@@ -23,5 +23,5 @@ velOffset = 2; % Velocity computation respect to position in 'offset' frames ago
 numHidStates = 6;
 selfTransProb = 0.7;
 maxIter = 50;
-covType = 'diag';
+covType = 'full';
 verbose = 1;

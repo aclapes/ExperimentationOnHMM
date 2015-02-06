@@ -65,6 +65,9 @@ params.selfTransProb = selfTransProb;
 params.numMixtures = numMixtures;
 params.covType = covType;
 params.maxIter = maxIter;
+params.standardization = standardization;
+params.scale = scale;
+params.reduction = reduction;
 
 % Results comprehension
 results.params = params;
