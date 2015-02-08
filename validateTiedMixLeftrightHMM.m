@@ -28,8 +28,8 @@ for i = 1:length(subjects)
     normType = normParams(1,1);
     if normType > 0
         if normType == 1
-            [dataTr, min, max] = minmaxScaleData(dataTr);
-            dataTe = minmaxScaleData(dataTe, min, max);
+            [dataTr, min, max] = minmaxData(dataTr);
+            dataTe = minmaxData(dataTe, min, max);
         elseif normType == 2
             [dataTr, M, V] = standardizeData(dataTr, scale);
             dataTe = standardizeData(dataTe, scale, M, V);

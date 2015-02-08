@@ -12,6 +12,8 @@ end
 
 Z = bsxfun(@minus, D, minVals);
 N = bsxfun(@times, Z, 1./(maxVals - minVals));
+N(N < 0) = 0;
+N(N > 1) = 1;
 
 stdData = cell(size(data));
 c = 0;
