@@ -48,10 +48,10 @@ indsParams = {[1:size(normParams,1)],
     [1:length(emInits)], 
     [1:length(covTypes)]};
 
-combsInds = allcomb(valParams{:});
+combsInds = allcomb(indsParams{:});
 
 warning('off','all');
-for i = 1:size(combsInds,1)
+parfor i = 1:(size(combsInds,1)/2)
     results = validateTiedMixLeftrightHMM(data, nfo, ...
         numHidStates, selfTransProb, repmat(2, length(actions), 1), ...
         normParams(combsInds(i,1),:), projVars(combsInds(i,2)), ...
