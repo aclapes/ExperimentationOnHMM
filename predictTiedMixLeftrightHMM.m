@@ -1,5 +1,5 @@
 function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obsTe, infoTr, infoTe, ...
-    numHidStates, selfTransProb, numMixtures, covType, maxIters, verbose)
+    numHidStates, selfTransProb, numMixtures, emInit, covType, maxIters, verbose)
 %continuousLeftrightHMMTest Test the performance of a continuous left-right HMM classifying data.
 %       data - A cell array of matrices representing NxP temporal sequences. 
 %   N time instances and P features.
@@ -34,7 +34,7 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
         tic;
         while ~success
             try
-                [lambda0.mu, lambda0.Sigma] = mixgauss_init(numHidStates*numMixtures(m), seqsTrSrl, covType);
+                [lambda0.mu, lambda0.Sigma] = mixgauss_init(numHidStates*numMixtures(m), seqsTrSrl, covType, emInit);
                 success = 1;
             catch err
                 tries = tries + 1;

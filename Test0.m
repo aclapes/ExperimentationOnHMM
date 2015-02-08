@@ -34,15 +34,33 @@ end
 %% Test 0
 % The same no. mixtures for each class model.
 
-numMixtures = [1]; %3 5 7 9 11 13 15]; % test different values
+normParams = [
+    0 0; 
+    1 0; 
+    2 0.1; 2 1; 2 10; 
+    3 1; 3 2];
+projVars = [0; 0.75; 0.9];
+emInits = {'rnd';'kmeans'};
+covTypes = {'diag';'full'};
+
+indsParams = {[1:size(normParams,1)], 
+    [1:length(projVars)], 
+    [1:length(emInits)], 
+    [1:length(covTypes)]};
+
+combsInds = allcomb(valParams{:});
 
 warning('off','all');
-for i = 1:size(numMixtures,2)
-    results = validateTiedMixLeftrightHMM(data, nfo, numHidStates, selfTransProb, ...
-        repmat(numMixtures(i), length(actions), 1), covType, maxIter, ...
-        standardization, scale, reduction, verbose);
+for i = 1:size(combsInds,1)
+    results = validateTiedMixLeftrightHMM(data, nfo, ...
+        numHidStates, selfTransProb, repmat(2, length(actions), 1), ...
+        normParams(combsInds(i,1),:), projVars(combsInds(i,2)), ...
+        emInits{combsInds(i,3)}, covTypes{combsInds(i,4)}, ...
+        maxIter, verbose);
     
-    save(sprintf('output/results/T0_%d-%.2f-%d-%d-%.2f_%s.mat', ...
+    save(sprintf('output/results/T0_%d-%.2f-%d-%d-%.2f-%.2f-%s-%s_%s.mat', ...
         numHidStates, selfTransProb, numMixtures(i), ...
-        standardization, reduction, datestr(now, 30)), 'results');
+        normParams(combsInds(i,1),:), projVars(combsInds(i,2)), ...
+        emInits{combsInds(i,3)}, covTypes{combsInds(i,4)}, ...
+        datestr(now, 30)), 'results');
 end

@@ -1,11 +1,15 @@
-function [ rata, E ] = dimreduction( data, varthresh, E )
+function [ rata, E ] = dimreduction( data, var )
 %DIMREDUCTION Summary of this function goes here
 %   Detailed explanation goes here
 
 % Format the data
 X = cell2mat(data)';
 
-if nargin < 3
+if prod(size(var)) > 1
+    E = var;
+else
+    varthresh = var;
+    
     % Get the principal components space
     [COEFF,SCORE,LATENT] = princomp(X);
     % Get those with associated greater eigenvalue (up to 90% of variance)

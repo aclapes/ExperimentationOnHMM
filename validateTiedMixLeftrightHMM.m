@@ -1,13 +1,7 @@
-function results = validateTiedMixLeftrightHMM( data, nfo, numHidStates, ...
-    selfTransProb, numMixtures, covType, maxIter, ...
-    standardization, scale, reduction, verbose)
-%validedTiedMixLeftrightHMM Uses a LOSOCV to validate a tied mix leftright
-%HMM with the indicated parameters:
-%   numHidStates
-%   selfTransProb
-%   numMixtures
-%   covType
-%   maxIter
+function results = validateTiedMixLeftrightHMM( data, nfo, ...
+    numHidStates, selfTransProb, numMixtures, ...
+    normParams, projVar, emInit, covType, maxIter, verbose)
+%validedTiedMixLeftrightHMM Validate a tied mix leftright using LOSOCV
 
 classes  = unique(nfo(1,:));
 subjects = unique(nfo(2,:));
@@ -31,23 +25,34 @@ for i = 1:length(subjects)
     dataTr = data(indicesTr);
     dataTe = data(indicesTe);
     
-    if standardization
-        %[dataTr, M, V] = standardizeData(dataTr, scale);
-        %dataTe = standardizeData(dataTe, scale, M, V);
-        dataTr = unitarizeData(dataTr,1);
-        dataTe = unitarizeData(dataTe,1);
+    normType = normParams(1,1);
+    if normType > 0
+        if normType == 1
+            [dataTr, min, max] = minmaxScaleData(dataTr);
+            dataTe = minmaxScaleData(dataTe, min, max);
+        elseif normType == 2
+            [dataTr, M, V] = standardizeData(dataTr, scale);
+            dataTe = standardizeData(dataTe, scale, M, V);
+        elseif normType == 3
+            p = normParams(1,2);
+            dataTr = unitarizeData(dataTr, p);
+            dataTe = unitarizeData(dataTe, p);
+        end
     end
     
-    if reduction < 1
-        [dataTr, E] = dimreduction(dataTr, reduction);
-        dataTe = dimreduction(dataTe, reduction, E);
+    if projVar > 0
+        [dataTr, E] = dimreduction(dataTr, projVar);
+        dataTe = dimreduction(dataTe, projVar, E);
     end
     
     rng(74);
+    tic;
     [predsTe, likesTe, pathsTe] = predictTiedMixLeftrightHMM( ...
                 dataTr, dataTe, ...
                 nfo(:,indicesTr), nfo(:,indicesTe), ...
-                numHidStates, selfTransProb, numMixtures, covType, maxIter, verbose);
+                numHidStates, selfTransProb, numMixtures, ...
+                emInit, covType, maxIter, verbose);
+    toc;
 
     preds(indicesTe) = predsTe;
     likes(indicesTe) = {likesTe};
@@ -63,11 +68,11 @@ end
 params.numHidStates = numHidStates;
 params.selfTransProb = selfTransProb;
 params.numMixtures = numMixtures;
+params.normParams = normParams;
+params.projVar = projVar;
+params.emInit = emInit;
 params.covType = covType;
 params.maxIter = maxIter;
-params.standardization = standardization;
-params.scale = scale;
-params.reduction = reduction;
 
 % Results comprehension
 results.params = params;
