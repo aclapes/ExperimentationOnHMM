@@ -35,7 +35,7 @@ end
 % The same no. mixtures for each class model.
 
 normParams = [
-%     0 0; 
+    0 0; 
     1 0; 
     2 0.1; 2 1; 2 10; 
     3 1; 3 2];
@@ -51,7 +51,7 @@ indsParams = {[1:size(normParams,1)],
 combsInds = allcomb(indsParams{:});
 
 warning('off','all');
-for i = (size(combsInds,1)/2 + 1):size(combsInds,1)
+for i = 1:size(combsInds,1)
     results = validateTiedMixLeftrightHMM(data, nfo, ...
         numHidStates, selfTransProb, repmat(2, length(actions), 1), ...
         normParams(combsInds(i,1),:), projVars(combsInds(i,2)), ...
