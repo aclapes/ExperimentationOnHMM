@@ -31,6 +31,7 @@ for i = 1:length(subjects)
             [dataTr, min, max] = minmaxScaleData(dataTr);
             dataTe = minmaxScaleData(dataTe, min, max);
         elseif normType == 2
+            scale = normParams(1,2);
             [dataTr, M, V] = standardizeData(dataTr, scale);
             dataTe = standardizeData(dataTe, scale, M, V);
         elseif normType == 3
@@ -42,7 +43,7 @@ for i = 1:length(subjects)
     
     if projVar > 0
         [dataTr, E] = dimreduction(dataTr, projVar);
-        dataTe = dimreduction(dataTe, projVar, E);
+        dataTe = dimreduction(dataTe, E);
     end
     
     rng(74);
