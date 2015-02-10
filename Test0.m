@@ -50,17 +50,113 @@ indsParams = {[1:size(normParams,1)],
 
 combsInds = allcomb(indsParams{:});
 
+A = [];
+P = {};
+
 warning('off','all');
-for i = 1:size(combsInds,1)
-    results = validateTiedMixLeftrightHMM(data, nfo, ...
-        numHidStates, selfTransProb, repmat(2, length(actions), 1), ...
-        normParams(combsInds(i,1),:), projVars(combsInds(i,2)), ...
-        emInits{combsInds(i,3)}, covTypes{combsInds(i,4)}, ...
-        maxIter, verbose);
-    
-    save(sprintf('output/results/T0_%d-%.2f-%d-%d-%.2f-%.2f-%s-%s_%s.mat', ...
-        numHidStates, selfTransProb, numMixtures(i), ...
-        normParams(combsInds(i,1),:), projVars(combsInds(i,2)), ...
-        emInits{combsInds(i,3)}, covTypes{combsInds(i,4)}, ...
-        datestr(now, 30)), 'results');
+dirlist = dir('output/results/');
+for i = 1:length(dirlist)
+    name = dirlist(i).name;
+    if ~isdir(name)
+        load(name);
+        if exist('results', 'var')
+            P{end+1} = results.params;
+            
+            accs = results.outsampleAccs;
+            accs(isnan(accs)) = 0;
+            A(i) = mean(mean(accs));
+        end
+    end
 end
+
+%% Per-parameter visualisation
+
+colors = {'r','g','b','m','y','c','w','k'};
+
+figure(1); title('Normalisation and scaling effect');
+M = cell(size(normParams,1),1);
+L = {};
+m = zeros(size(normParams,1),1);
+for i = 1:size(normParams,1)
+    n = normParams(i,1);
+    p = normParams(i,2);
+    l = {};
+    for j = 1:length(P)
+        if n == P{j}.normParams(1,1) && p == P{j}.normParams(1,2)
+            M{i} = [M{i}, A(j)];
+            l{end+1} = P{j};
+        end
+    end
+    L{end+1} = l;
+    m(i) = mean(M{i});
+    hold on;
+    bar(i,m(i),colors{n+1});
+end
+legend('None','Minmax', 'Std (0.1)', 'Std', 'Std (10)', 'Unit (1-norm)', 'Unit (2-norm)');
+xlim([0.5 length(m)+0.5]); 
+grid on; 
+hold off;
+
+MM = cell2mat(M);
+[maxRow, maxRowInds] = max(MM);
+[maxElm, maxColIdx] = max(maxRow);
+maxRowIdx = maxRowInds(maxColIdx);
+L{maxRowIdx}{maxColIdx} 
+MM(maxRowIdx,maxColIdx)
+
+figure(2); title('PCA decorrelation and dim reduction effect');
+M = cell(size(projVars,1),1);
+m = zeros(size(projVars,1),1);
+for i = 1:size(projVars,1)
+    v = projVars(i);
+    for j = 1:length(P)
+        if v == P{j}.projVar
+            M{i} = [M{i}, A(j)];
+        end
+    end
+    m(i) = mean(M{i});
+    hold on;
+    bar(i,m(i),colors{i});
+end
+legend('None','0.75', '0.9');
+xlim([0.5 length(m)+0.5]); 
+grid on; 
+hold off;
+
+figure(3); title('EM initialisation effect');
+M = cell(size(emInits,1),1);
+m = zeros(size(emInits,1),1);
+for i = 1:size(emInits,1)
+    init = emInits(i);
+    for j = 1:length(P)
+        if strcmp(init,P{j}.emInit)
+            M{i} = [M{i}, A(j)];
+        end
+    end
+    m(i) = mean(M{i});
+    hold on;
+    bar(i,m(i),colors{i});
+end
+legend('rnd','kmeans');
+xlim([0.5 length(m)+0.5]); 
+grid on; 
+hold off;
+
+figure(4); title('Covariance matrix shape effect');
+M = cell(size(covTypes,1),1);
+m = zeros(size(covTypes,1),1);
+for i = 1:size(covTypes,1)
+    covType = covTypes(i);
+    for j = 1:length(P)
+        if strcmp(covType,P{j}.covType)
+            M{i} = [M{i}, A(j)];
+        end
+    end
+    m(i) = mean(M{i});
+    hold on;
+    bar(i,m(i),colors{i});
+end
+legend('diag','full');
+xlim([0.5 length(m)+0.5]); 
+grid on; 
+hold off;
