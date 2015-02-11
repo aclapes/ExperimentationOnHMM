@@ -54,17 +54,17 @@ A = [];
 P = {};
 
 warning('off','all');
-dirlist = dir('output/results/');
+dirlist = dir('output/results/T0/');
 for i = 1:length(dirlist)
     name = dirlist(i).name;
-    if ~isdir(name)
+    if ~isdir(name) && ~strcmp(name,'README.txt')
         load(name);
         if exist('results', 'var')
             P{end+1} = results.params;
             
             accs = results.outsampleAccs;
             accs(isnan(accs)) = 0;
-            A(i) = mean(mean(accs));
+            A = [A; mean(mean(accs))];
         end
     end
 end

@@ -33,12 +33,24 @@ end
 %% Test 1
 % The same no. mixtures for each class model.
 
-numMixtures = [1 3 5 7 9 11 13 15]; % test different values
+numHidStates = [3 4 5];
+numMixtures = [1 2 3 5 7 10 15 20]; % test different values
 
-parfor i = 1:size(numMixtures,2)
-    results = validateTiedMixLeftrightHMM(data, nfo, numHidStates, selfTransProb, ...
-        repmat(numMixtures(i), length(actions), 1), covType, maxIter);
-    
-    save(sprintf('output/results/T0_%d-%.2f-%d_%s.mat', ...
-        numHidStates, selfTransProb, numMixtures(i), datestr(now, 30)), 'results');
+A = [];
+P = {};
+
+warning('off','all');
+dirlist = dir('output/results/T1');
+for i = 1:length(dirlist)
+    name = dirlist(i).name;
+    if ~isdir(name)
+        load(name);
+        if exist('results', 'var')
+            P{end+1} = results.params;
+            
+            accs = results.outsampleAccs;
+            accs(isnan(accs)) = 0;
+            A(i) = mean(mean(accs));
+        end
+    end
 end

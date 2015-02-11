@@ -15,9 +15,6 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
     %% Continuous Left-right HMM (trained via EM)
 
     addpath(genpath('../Libs/HMMall/'));
-
-    lambda0.Pi = normalise([1; zeros(numHidStates-1,1)]);
-    lambda0.A = mk_leftright_transmat(numHidStates,selfTransProb);
     
     actionsTr = unique(infoTr(1,:));
     lambdas = cell(length(actionsTr),1);
@@ -34,7 +31,7 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
         tic;
         while ~success
             try
-                [lambda0.mu, lambda0.Sigma] = mixgauss_init(numHidStates*numMixtures(m), seqsTrSrl, covType, emInit);
+                [lambda0.mu, lambda0.Sigma] = mixgauss_init(numHidStates(m)*numMixtures(m), seqsTrSrl, covType, emInit);
                 success = 1;
             catch err
                 tries = tries + 1;
@@ -43,9 +40,11 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
         end
         t1 = toc;
         
-        lambda0.mu = reshape(lambda0.mu, [O numHidStates numMixtures(m)]);
-        lambda0.Sigma = reshape(lambda0.Sigma, [O O numHidStates numMixtures(m)]);
-        lambda0.mixmat = mk_stochastic(rand(numHidStates,numMixtures(m)));
+        lambda0.Pi = normalise([1; zeros(numHidStates(m)-1,1)]);
+        lambda0.A = mk_leftright_transmat(numHidStates(m),selfTransProb);
+        lambda0.mu = reshape(lambda0.mu, [O numHidStates(m) numMixtures(m)]);
+        lambda0.Sigma = reshape(lambda0.Sigma, [O O numHidStates(m) numMixtures(m)]);
+        lambda0.mixmat = mk_stochastic(rand(numHidStates(m),numMixtures(m)));
         
         tic;
         [~, lambdas{m}.Pi, lambdas{m}.A, lambdas{m}.mu, lambdas{m}.Sigma, lambdas{m}.mixmat] = mhmm_em( ...

@@ -1,115 +1,100 @@
-% Test2.m (complementary to Test1.m)
-%
-% Experiments on a discrete HMM: study of effect of self transition prob
-% parameter. Num of quantization vectors and num of hidden states are kept
-% fixed.
-%
-% A LOSOCV is used in order to measure the goodness of the parameter, not
-% the out-of-sample accuracy (an outer CV would be required).
-
-addpath(genpath('../MSRAction3DSkeletonReal3D/'));
 rmpath(genpath('../Libs/HMMall/'));
 
-addpath('featextract/');
+addpath('featuring/');
+addpath('filtering/');
+addpath('validating/');
+addpath('normalizing/');
+addpath('projection/');
+
+addpath(genpath('../MSRAction3DSkeletonReal3D/'));
+addpath(genpath('output/'));
 
 %% Parametrization
 
-actions = [1:20];
-subjects = [1:10];
-examples = [1:3];
-useConfidences = 0;
-
-numClusters = 80;
-
-neckIdx = 3;
-
-lag = 4; % Moving average past frames to take into account ('lag')
-offset = 2; % Velocity computation respect to position in 'offset' frames ago
-
-% Define the generating model
-
-selfTransProb = [0.9:-0.1:0.1];
-numHidStates = 6;
-maxIters = 50;
+parametrize;
 
 %% Load data
 
-info = []; % Action info
-data = {}; % Action data
+if exist('data', 'file')
+    load('data');
+else
+    [data, nfo] = loadData('../MSRAction3DSkeletonReal3D/', ...
+    actions, subjects, examples, useConfidences);
 
-for i = 1:length(actions)
-    a = actions(i);
-    for j = 1:length(subjects)
-        s = subjects(j);
-        for k = 1:length(examples)
-            e = examples(k);
-            % Get the indexed skeleton
-            skeleton = getskt3d('../MSRAction3DSkeletonReal3D/',a,s,e,useConfidences);
-%             isempty(skeleton)
-            if ~isempty(skeleton)
-                % Append to the data cell
-                info = [info; a,s,e];
-                data{end+1,1} = skeleton;
+    % Filter noise
+%     data = movingAverageFilter(data, movAvgLag);
+    % Extract features instead of RAW data
+    data = extractKinematicFeatures(data, velOffset);
+    
+    save('data.mat', 'data', 'nfo');
+end
+
+%% Test 2
+
+numHidStates = [3; 5; 7];
+numMixtures = [5; 10; 15];
+
+dichotomies = {'D01', 'D02', 'D03', 'D04'};
+warning('off','all');
+
+A = zeros(length(numHidStates) * length(numMixtures), 2, length(dichotomies));
+for d = 1:length(dichotomies)
+    A_d = [];
+    P = {};
+    dirlist = dir(['output/results/T2/', dichotomies{d}]);
+    for i = 1:length(dirlist)
+        name = dirlist(i).name;
+        if ~isdir(name)
+            load(name);
+            if exist('results', 'var')
+                P{end+1} = results.params;
+
+                accs = results.outsampleAccs;
+                accs(isnan(accs)) = 0;
+                A_d = [A_d; mean(accs,2)'];
             end
         end
     end
+    A(:,:,d) = A_d;
 end
+A = mean(A,3);
 
-%% Filtering
-
-% Smooth skeletons
-for i = 1:length(data)
-    seq = data{i};
-    filtSktSeq = tsmovavg( [repmat(seq(1,:),lag,1); seq] ,'e', lag, 1);
-    data{i} = filtSktSeq((1+lag):end, :);
-end
-
-%% Feature extraction
-
-for i = 1:length(data)
-    seq = data{i};
-    
-    % Get normalized positions (relative to neck joint)
-    neckSeq = seq(:,(3*(neckIdx-1)+1):3*(neckIdx) );
-    normSktSeq = seq - repmat(neckSeq,1,20);
-    
-    % Wrist-elbow-shoulder left and right angles
-    leftElbowAngles = anglesBetweenJoints(normSktSeq, 1, 8, 10);
-    rightElbowAngles = anglesBetweenJoints(normSktSeq, 2, 9, 11);
-    leftShoulderAngles = anglesBetweenJoints(normSktSeq, 8, 1, 3);
-    rightShoulderAngles = anglesBetweenJoints(normSktSeq, 9, 2, 3);
-    
-    % Get velocities
-    velocities = velocitiesInJoints(normSktSeq, offset);
-    
-    % Build a joint representation (early feature fusion)
-    data{i} = [normSktSeq, velocities, leftElbowAngles, rightElbowAngles, leftShoulderAngles, rightShoulderAngles];
-end
-
-subjects = unique(info(:,2));
-
-%% Leave-One-Out Cross-Validation (LOOCV)
-
-outsampleAccs = zeros( length(numClusters)*length(numHidStates), size(subjects,2) );
-
-for i = 1:length(subjects)
-    u = subjects(i);
-
-    infoTr = info(info(:,2) ~= u,:);
-    infoTe = info(info(:,2) == u,:);
-
-    dataTr = data(info(:,2) ~= u,:);
-    dataTe = data(info(:,2) == u,:);
-
-    percTr = size(dataTr,1)/size(data,1) * 100;
-    percTe = size(dataTe,1)/size(data,1) * 100;
-
-    display(['Sbj ', num2str(i), '. Total data: ', num2str(size(data,1)), ', (', ...
-        num2str(percTr), '% train, ', num2str(percTe), '% test).']);
-
-    [obsTr, obsTe] = preprocess(dataTr, dataTe, numClusters);
-    for j = 1:length(selfTransProb)
-        outsampleAccs(j, i) = discreteLeftrightHMMTest(obsTr, obsTe, ...
-            infoTr, infoTe, numClusters, numHidStates, selfTransProb(j), maxIters);
+figure(1);
+hold on;
+title('Num of mixtures effect');
+M = cell(length(numMixtures),1);
+for i = 1:length(numMixtures)
+    n = numMixtures(i);
+    for j = 1:length(P)
+        if n == P{j}.numMixtures(1)
+            M{i} = [M{i}; A(j,:)];
+        end
     end
+    M{i} = mean(M{i});
 end
+bar(cell2mat(M));
+legend('Class 1 (a class)','Class 2 (rest)');
+xlim([0.5 length(m)+0.5]); 
+set( gca, 'XTickLabel', num2cell(numMixtures) );
+grid on; 
+hold off;
+
+figure(2); 
+hold on;
+title('Num of hidden states effect');
+M = cell(length(numHidStates),1);
+for i = 1:length(numHidStates)
+    h = numHidStates(i);
+    for j = 1:length(P)
+        if h == P{j}.numHidStates
+            M{i} = [M{i}; A(j,:)];
+        end
+    end
+    M{i} = mean(M{i});
+end
+bar(cell2mat(M));
+legend('Class 1 (a class)','Class 2 (rest)');
+xlim([0.5 length(m)+0.5]); 
+set( gca, 'XTickLabel', num2cell(numHidStates) );
+grid on; 
+hold off;
