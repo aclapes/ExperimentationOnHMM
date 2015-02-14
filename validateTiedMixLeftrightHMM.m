@@ -46,7 +46,7 @@ for i = 1:length(subjects)
         dataTe = dimreduction(dataTe, E);
     end
     
-    rng(74);
+%     rng(74);
     tic;
     [predsTe, likesTe, pathsTe] = predictTiedMixLeftrightHMM( ...
                 dataTr, dataTe, ...
