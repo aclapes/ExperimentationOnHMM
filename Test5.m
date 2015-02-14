@@ -44,9 +44,9 @@ numMixtures = [1 3 9 27];
 
 warning('off','all');
 
-s = 1;
-stclass = (nfo(1,:) == s);
-ndclass = (nfo(1,:) ~= s);
+%ocdic = 1;
+stclass = (nfo(1,:) == ocdic);
+ndclass = (nfo(1,:) ~= ocdic);
 nfo(1, stclass) = 1;
 nfo(1, ndclass) = 2;
 
@@ -63,8 +63,8 @@ for i = 1:size(C,1)
             emInit, covType, ...
             maxIter, verbose);
 
-        save(sprintf('output/results/T5/S%d_%.2f-%d-%.2f-%s-%s-%d_%s.mat', ...
-            s, selfTransProb, ...
+        save(sprintf('output/results/T5/S%db_%d-%.2f-%d-%d-%d-%.2f-%s-%s-%d_%s.mat', ...
+            ocdic, numHidStates, selfTransProb, C(i,:), ...
             normParam(1,1), projVar, ...
             emInit, covType, r, ...
             datestr(now, 30)), 'results');
