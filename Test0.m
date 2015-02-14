@@ -94,6 +94,7 @@ for i = 1:size(normParams,1)
 end
 legend('None','Minmax', 'Std (0.1)', 'Std', 'Std (10)', 'Unit (1-norm)', 'Unit (2-norm)');
 xlim([0.5 length(m)+0.5]); 
+ylabel('Accuracy');
 grid on; 
 hold off;
 
@@ -120,10 +121,12 @@ for i = 1:size(projVars,1)
 end
 legend('None','0.75', '0.9');
 xlim([0.5 length(m)+0.5]); 
+ylabel('Accuracy');
 grid on; 
 hold off;
 
-figure(3); title('EM initialisation effect');
+figure(3);
+subplot(1,2,1); hold on; title('EM initialisation effect (all scalings)');
 M = cell(size(emInits,1),1);
 m = zeros(size(emInits,1),1);
 for i = 1:size(emInits,1)
@@ -139,10 +142,35 @@ for i = 1:size(emInits,1)
 end
 legend('rnd','kmeans');
 xlim([0.5 length(m)+0.5]); 
+ylim([0 1]);
+ylabel('Accuracy');
 grid on; 
 hold off;
 
-figure(4); title('Covariance matrix shape effect');
+subplot(1,2,2); hold on; title('EM initialisation effect (minmax)');
+M = cell(size(emInits,1),1);
+m = zeros(size(emInits,1),1);
+for i = 1:size(emInits,1)
+    init = emInits(i);
+    for j = 1:length(P)
+        if P{j}.normParams(1,1) == 1 && strcmp(init,P{j}.emInit)
+            M{i} = [M{i}, A(j)];
+        end
+    end
+    m(i) = mean(M{i});
+    hold on;
+    bar(i,m(i),colors{i});
+end
+legend('rnd','kmeans');
+xlim([0.5 length(m)+0.5]); 
+ylim([0 1]);
+ylabel('Accuracy');
+grid on; 
+hold off;
+
+
+figure(4);
+subplot(1,2,1); hold on; title('Covariance matrix shape effect (all scalings)');
 M = cell(size(covTypes,1),1);
 m = zeros(size(covTypes,1),1);
 for i = 1:size(covTypes,1)
@@ -158,5 +186,28 @@ for i = 1:size(covTypes,1)
 end
 legend('diag','full');
 xlim([0.5 length(m)+0.5]); 
+ylim([0 1]);
+ylabel('Accuracy');
+grid on; 
+hold off;
+
+subplot(1,2,2); hold on; title('Covariance matrix shape effect (minmax)');
+M = cell(size(covTypes,1),1);
+m = zeros(size(covTypes,1),1);
+for i = 1:size(covTypes,1)
+    covType = covTypes(i);
+    for j = 1:length(P)
+        if P{j}.normParams(1,1) == 1 && strcmp(covType,P{j}.covType)
+            M{i} = [M{i}, A(j)];
+        end
+    end
+    m(i) = mean(M{i});
+    hold on;
+    bar(i,m(i),colors{i});
+end
+legend('diag','full');
+xlim([0.5 length(m)+0.5]); 
+ylim([0 1]);
+ylabel('Accuracy');
 grid on; 
 hold off;

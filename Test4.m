@@ -1,9 +1,10 @@
-% Test3.m - Test a continuous HMM
-
 rmpath(genpath('../Libs/HMMall/'));
 
-addpath('featextract/');
+addpath('featuring/');
 addpath('filtering/');
+addpath('validating/');
+addpath('normalizing/');
+addpath('projection/');
 
 addpath(genpath('../MSRAction3DSkeletonReal3D/'));
 addpath(genpath('output/'));
@@ -11,80 +12,41 @@ addpath(genpath('output/'));
 %% Parametrization
 
 parametrize;
-L = actions; % multi-class
-
-% auxL = [ tril(ones(length(actions)/2))+triu(2*ones(length(actions)/2),1), 2*ones(length(actions)/2) ];
-% rng(74);
-% L = flipud( auxL(:,randperm(size(auxL,2))) );
-
-% L = [1 2 2 2 2 1 2 2 2 2 2 2 2 2 2 2 2 2 2 2];
 
 %% Load data
 
-load('data');
-if ~exist('data','var')
+if exist('data', 'file')
+    load('data');
+else
     [data, nfo] = loadData('../MSRAction3DSkeletonReal3D/', ...
     actions, subjects, examples, useConfidences);
 
     % Filter noise
-    data = movingAverageFilter(data, 4);
+%     data = movingAverageFilter(data, movAvgLag);
     % Extract features instead of RAW data
-    data = extractKinematicFeatures(data, 2);
+    data = extractKinematicFeatures(data, velOffset);
     
     save('data.mat', 'data', 'nfo');
 end
 
+%% Test 2
 
-%% Learning and results savings
-% Using a Leave-One-Out Cross-Validation (LOOCV)
+warning('off','all');
 
-subjects = unique(nfo(2,:));
+A_d = [];
+P = {};
+dirlist = dir(['output/results/T4/']);
+for i = 1:length(dirlist)
+    name = dirlist(i).name;
+    if ~isdir(name)
+        load(name);
+        if exist('results', 'var')
+            P{end+1} = results.params;
 
-for l = 1:size(L,1)     
-    rng(74);
-
-    preds = zeros(1,size(nfo,2));
-    likes = cell(1,size(nfo,2));
-    paths = cell(1,size(nfo,2));
-    
-    lut = L(l,:); % look-up table
-    dicnfo = [lut(nfo(1,:)); nfo(2:end,:)];
-    
-    classes = unique(dicnfo(1,:));
-    
-    instances = histc(lut(:),classes);
-    numMixtures = floor(1.5*(log2(instances)+1)); % min( floor(instances/2.0)+1, repmat([5], length(instances), 1));
-%     [maxVal, maxIdx] = max(histc(dicnfo(:),classes));
-%     numMixtures = 2 * (floor( log(sum(lut==classes(maxIdx))) + 1));
-    
-    outsampleAccs = nan( length(classes), length(subjects) );
-
-    for i = 1:length(subjects)
-        u = subjects(i);
-
-        indicesTr = dicnfo(2,:) ~= u; % leave i-th subject out
-        indicesTe = dicnfo(2,:) == u;
-        
-        dicinfoTr = dicnfo(:,indicesTr);
-        dicinfoTe = dicnfo(:,indicesTe);
-        dataTr = data(indicesTr);
-        dataTe = data(indicesTe);
-
-        display(['Sbj ', num2str(i), '. Total data: ', num2str(length(data)), ', (', ...
-            num2str(length(dataTr)/length(data)), '% train, ', num2str(length(dataTe)/length(data)), '% test).']);
-
-        results = predictTiedMixLeftrightHMM(dataTr, dataTe, ...
-                    dicinfoTr, dicinfoTe, numHidStates, selfTransProb, numMixtures, covType, maxIters, 1);
-
-%         preds(indicesTe) = results.predsTe;
-%         likes(indicesTe) = {results.likesTe};
-%         paths(indicesTe) = pathsTe;
-%         
-        [~, A, C] = accuracy(dicinfoTe(1,:), results.predsTe);
-        outsampleAccs(C,i) = A;
+            accs = results.outsampleAccs;
+            accs(isnan(accs)) = 0;
+            A_d = [A_d; mean(accs,2)'];
+        end
     end
-    
-    save([num2str(lut(:))', '.mat'], 'lut', 'preds', 'likes', 'paths', ...
-        'outsampleAccs', 'numHidStates', 'dicnfo', 'numMixtures');
-
 end
+A = mean(A_d)

@@ -50,7 +50,47 @@ for i = 1:length(dirlist)
             
             accs = results.outsampleAccs;
             accs(isnan(accs)) = 0;
-            A(i) = mean(mean(accs));
+            A(end+1) = mean(mean(accs));
         end
     end
 end
+
+figure(1); hold on; title('Num hidden states');
+M = cell(length(numHidStates),1);
+m = zeros(length(numHidStates),1);
+for i = 1:length(numHidStates)
+    h = numHidStates(i);
+    for j = 1:length(P)
+        if h == P{j}.numHidStates
+            M{i} = [M{i}, A(j)];
+        end
+    end
+    m(i) = mean(M{i});
+end
+bar(m);
+xlim([0.5 length(m)+0.5]); 
+ylabel('Accuracy');
+xlabel('Num hidden states');
+set(gca, 'XTickLabel', mat2cell(numHidStates,1));
+grid on; 
+hold off;
+
+figure(2); hold on; title('Num. mixtures');
+M = cell(length(numMixtures),1);
+m = zeros(length(numMixtures),1);
+for i = 1:length(numMixtures)
+    n = numMixtures(i);
+    for j = 1:length(P)
+        if n == P{j}.numMixtures(1)
+            M{i} = [M{i}, A(j)];
+        end
+    end
+    m(i) = mean(M{i});
+end
+bar(m);
+xlim([0.5 length(m)+0.5]); 
+ylabel('Accuracy');
+xlabel('Num mixtures');
+% set(gca, 'XTickLabel', mat2cell(numHidStates,1));
+grid on; 
+hold off;
