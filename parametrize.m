@@ -20,7 +20,7 @@ movAvgLag = 4; % Moving average past frames to take into account ('lag')
 velOffset = 2; % Velocity computation respect to position in 'offset' frames ago
 
 %% HMM (continuous) model parametrization
-numHidStates = 6;
+numHidStates = 5;
 selfTransProb = 0.7;
 maxIter = 50;
 covType = 'full';

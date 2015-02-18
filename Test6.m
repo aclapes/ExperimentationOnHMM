@@ -15,6 +15,21 @@ addpath(genpath('output/'));
 
 parametrize;
 
+rng(42);
+inds = randperm(20);
+actions = inds(1:5);
+rng('shuffle');
+
+numMixtures = [1 3 9 27];
+
+normParam = [1 0];
+projVar = 0.9;
+emInit = 'rnd';
+covType = 'full';
+
+numReplicas = 3;
+verbose = 0;
+
 %% Load data
 
 if exist('data', 'file')
@@ -31,34 +46,29 @@ else
     save('data.mat', 'data', 'nfo');
 end
 
-%% Test 0
-% The same no. mixtures for each class model.
+%% Test 6
+% A different number of mixtures per class
 
-normParam = [1 0];
-projVar = 0.9;
-emInit = 'rnd';
-covType = 'full';
-
-numHidStates = 5;
-numMixtures = [1 3 9 27];
+tmp = repmat({numMixtures}, 1, length(actions));
+C = allcomb(tmp{:});
 
 warning('off','all');
 
+for i = 1:size(C)
+    TSTART = tic;
+    results = validateTiedMixLeftrightHMM(data, nfo, ...
+        repmat([numHidStates],1,length(actions)), selfTransProb, C(i,:), ...
+        normParam, projVar, ...
+        emInit, covType, ...
+        maxIter, verbose);
+    results.time = toc(TSTART);
 
-numReplicas = 3;
+    filename = sprintf(['%d-%.2f-', repmat(['%d-'], 1, length(actions)),'%d-%.2f-%s-%s_%s.mat'], ...
+        numHidStates, selfTransProb, C(i,:), ...
+        normParam(1,1), projVar, ...
+        emInit, covType, ...
+        datestr(now, 30));
 
-for i = 1:length(numMixtures)
-    for r = 1:numReplicas
-        results = validateTiedMixLeftrightHMM(data, nfo, ...
-            repmat([numHidStates],1,length(actions)), selfTransProb, repmat([numMixtures(i)], 1, length(actions)), ...
-            normParam, projVar, ...
-            emInit, covType, ...
-            maxIter, verbose);
-
-        save(sprintf('output/results/T6/%d-%.2f-%d-%d-%.2f-%s-%s-%d_%s.mat', ...
-            numHidStates, selfTransProb, numMixtures(i), ...
-            normParam(1,1), projVar, ...
-            emInit, covType, r, ...
-            datestr(now, 30)), 'results');
-    end
+    save(['output/results/ST6/', filename], 'results');
+    fprintf('%s took %.3f s.\n', filename, results.time);
 end

@@ -16,19 +16,19 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
 
     addpath(genpath('../Libs/HMMall/'));
     
-    actionsTr = unique(infoTr(1,:));
-    lambdas = cell(length(actionsTr),1);
+    classes = unique(infoTr(1,:));
+    lambdas = cell(length(classes),1);
     
     time = 0;
     
-    for m = 1:length(actionsTr)
-        seqsTr = obsTr(infoTr(1,:) == actionsTr(m));
+    for m = 1:length(classes)
+        seqsTr = obsTr(infoTr(1,:) == classes(m));
         
         seqsTrSrl = cell2mat(seqsTr);
         O = size(seqsTrSrl,1);
         success = 0;
         tries = 0;
-        tic;
+        TSTART = tic;
         while ~success
             try
                 [lambda0.mu, lambda0.Sigma] = mixgauss_init(numHidStates(m)*numMixtures(m), seqsTrSrl, covType, emInit);
@@ -38,7 +38,7 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
                 success = 0;
             end
         end
-        t1 = toc;
+        t1 = toc(TSTART);
         
         lambda0.Pi = normalise([1; zeros(numHidStates(m)-1,1)]);
         lambda0.A = mk_leftright_transmat(numHidStates(m),selfTransProb);
@@ -46,12 +46,12 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
         lambda0.Sigma = reshape(lambda0.Sigma, [O O numHidStates(m) numMixtures(m)]);
         lambda0.mixmat = mk_stochastic(rand(numHidStates(m),numMixtures(m)));
         
-        tic;
+        TSTART = tic;
         [~, lambdas{m}.Pi, lambdas{m}.A, lambdas{m}.mu, lambdas{m}.Sigma, lambdas{m}.mixmat] = mhmm_em( ...
             seqsTr, lambda0.Pi, lambda0.A, ...
             lambda0.mu, lambda0.Sigma, lambda0.mixmat, ...
             'max_iter', maxIters, 'verbose', 0, 'cov_type', covType);
-        t2 = toc;
+        t2 = toc(TSTART);
         
         mtime = t1 + t2;
         if verbose
@@ -60,8 +60,11 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
          end
         time = time + mtime;
     end
-    display(['All models training took ', num2str(time), ' secs.']);
-
+    
+    if verbose
+        display(['All models training took ', num2str(time), ' secs.']);
+    end
+    
     predsTe = zeros(1,size(infoTe,2));
     loglikesTe = zeros(length(lambdas),size(infoTe,2));
     pathsTe = cell(1,size(infoTe,2));
@@ -74,7 +77,7 @@ function [predsTe, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( obsTr, obs
         end
         % Prediction is mAP estimate
         [~, mAP] = max(loglikesTe(:,j)); % mAP
-        predsTe(j) = mAP;
+        predsTe(j) = classes(mAP);
         % Predict the path
         pathsTe(j) = mhmm_path(obsTe{j}, lambdas{mAP}.Pi, lambdas{mAP}.A, ...
             lambdas{mAP}.mu, lambdas{mAP}.Sigma, lambdas{mAP}.mixmat);

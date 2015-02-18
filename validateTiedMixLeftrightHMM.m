@@ -19,8 +19,10 @@ for i = 1:length(subjects)
     indicesTr = ( nfo(2,:) ~= u ); % leave i-th subject out
     indicesTe = ( nfo(2,:) == u );
 
-    display(['Sbj ', num2str(i), '. Total data: ', num2str(length(data)), ', (', ...
+    if verbose
+        display(['Sbj ', num2str(i), '. Total data: ', num2str(length(data)), ', (', ...
         num2str(sum(indicesTr)/length(data)), '% train, ', num2str(sum(indicesTe)/length(data)), '% test).']);
+    end
     
     dataTr = data(indicesTr);
     dataTe = data(indicesTe);
@@ -47,20 +49,20 @@ for i = 1:length(subjects)
     end
     
 %     rng(74);
-    tic;
     [predsTe, likesTe, pathsTe] = predictTiedMixLeftrightHMM( ...
                 dataTr, dataTe, ...
                 nfo(:,indicesTr), nfo(:,indicesTe), ...
                 numHidStates, selfTransProb, numMixtures, ...
                 emInit, covType, maxIter, verbose);
-    toc;
 
     preds(indicesTe) = predsTe;
     likes(indicesTe) = {likesTe};
     paths(indicesTe) = pathsTe;
 
     [~, A, C] = accuracy(nfo(1,indicesTe), predsTe);
-    display(mean(A));
+    if verbose
+        display(mean(A));
+    end
     
     outsampleAccs(C,i) = A;
 end
