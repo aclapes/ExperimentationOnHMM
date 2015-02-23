@@ -79,4 +79,4 @@ for d = vargin
         save(['output/results/TCA1/', filename], 'results');
         fprintf('%s took %.3f s.\n', filename, results.time);
     end
-    end7
+end
