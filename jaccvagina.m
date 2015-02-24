@@ -14,3 +14,5 @@ hold on;
 title('Jaccvagina');
 xlabel('G'); ylabel('P');
 hold off;
+
+mfilename

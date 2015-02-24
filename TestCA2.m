@@ -20,12 +20,12 @@ inds = randperm(20);
 actions = inds(1:5);
 rng('shuffle');
 
-numMixtures = [1 2 3 5 10 20 30];
+numMixtures = [1 2 3 5 10 20];
 
 normParam = [1 0];
 projVar = 0.9;
 emInit = 'rnd';
-covType = 'full';
+covType = 'diag';
 
 numReplicas = 3;
 verbose = 0;
@@ -54,6 +54,10 @@ C = allcomb(tmp{:});
 
 warning('off','all');
 
+if ~exist(['output/results/', mfilename])
+    mkdir(['output/results/', mfilename]);
+end
+
 D = -eye(length(actions)) + 2;
 
 for d = vargin
@@ -63,7 +67,7 @@ for d = vargin
     
     for i = 1:size(C)
         TSTART = tic;
-        results = validateTiedMixLeftrightHMM(data, [metalbls; nfo(2:end,:)], ...
+        [results, models] = validateTiedMixLeftrightHMM(data, [metalbls; nfo(2:end,:)], ...
             repmat([numHidStates],1,2), selfTransProb, C(i,:), ...
             normParam, projVar, ...
             emInit, covType, ...
@@ -76,7 +80,9 @@ for d = vargin
             emInit, covType, D(:,d), ...
             datestr(now, 30));
 
-        save(['output/results/TCA1/', filename], 'results');
+        save(['output/results/', mfilename, '/results_', filename], 'results');
+        save(['output/models/', mfilename, '/models_', filename], 'models');
+
         fprintf('%s took %.3f s.\n', filename, results.time);
     end
 end

@@ -20,6 +20,8 @@ addpath(genpath('output/'));
 %% Parametrization
 parametrize;
 
+numActions = 5;
+
 %% Test 0
 
 normParam = [1 0];
@@ -30,9 +32,9 @@ covType = 'full';
 numHidStates = 5;
 numMixtures = [1 2 3 5];
 
-numReplicas = 4;
+numReplicas = 3;
 
-tmp = repmat({numMixtures}, 1, length(actions));
+tmp = repmat({numMixtures}, 1, numActions);
 C = allcomb(tmp{:});
 
 resultsSmry = cell(size(C,1), numReplicas); % 2-D cell structure of results
@@ -49,7 +51,9 @@ for i = 1:size(C,1)
     end
 end
 
-actions = unique(resultsSmry{i,r}.nfo(1,:));
+[actions, uniqInds] = unique(resultsSmry{1,1}.nfo(1,:));
+[srtVals, srtInds] = sort(uniqInds);
+actions = actions(srtInds);
 
 % Process the results (for the specified subset of actions)
 
@@ -58,7 +62,7 @@ Pavg = zeros(length(actions),size(C,1));
 Pmax = zeros(length(actions),size(C,1));
 
 for i = 1:size(C,1)
-    S = resultsSmry{i,1}.outsampleAccs;
+    S = resultsSmry{i,1}.outsampleAccs(actions,:);
     S(isnan(S)) = 0;
     
     Aone = S;
@@ -66,7 +70,7 @@ for i = 1:size(C,1)
     Aavg = S / numReplicas;
     
     for r = 2:numReplicas
-        s = resultsSmry{i,r}.outsampleAccs();
+        s = resultsSmry{i,r}.outsampleAccs(actions,:);
         s(isnan(s)) = 0;
         
         Amax = max(Amax,s);
@@ -78,3 +82,12 @@ for i = 1:size(C,1)
     Pavg(:,i) = mean(Aavg,2);
 end
 
+display('Performance (first replica).');
+[maxVal, maxIdx] = max(mean(Pone));
+sprintf(repmat('%.2f ', 1, length(actions)), Pone(:,maxIdx))
+display('Performance (average replicas).');
+[maxVal, maxIdx] = max(mean(Pavg));
+sprintf(repmat('%.2f ', 1, length(actions)), Pavg(:,maxIdx))
+display('Performance (best perf replica).');
+[maxVal, maxIdx] = max(mean(Pmax));
+sprintf(repmat('%.2f ', 1, length(actions)), Pmax(:,maxIdx))
