@@ -16,8 +16,9 @@ addpath(genpath('output/'));
 parametrize;
 
 rng(42);
-inds = randperm(20);
-actions = inds(1:5);
+perm = randperm(20);
+actions = perm(1:5);
+inds(actions) = [1:length(actions)]; % used further
 rng('shuffle');
 
 numMixtures = [1 2 3 5 10 20];
@@ -29,6 +30,8 @@ covType = 'diag';
 
 numReplicas = 3;
 verbose = 0;
+
+schemeECOC = 'onevsone';
 
 %% Load data
 
@@ -54,34 +57,36 @@ C = allcomb(tmp{:});
 
 warning('off','all');
 
-if ~exist(['output/results/', mfilename])
-    mkdir(['output/results/', mfilename]);
-end
+D = codingECOC(schemeECOC, length(actions));
+outputDir = ['output/results/', mfilename, '/', schemeECOC, '/'];
 
-D = -eye(length(actions)) + 2;
-
-for d = vargin
-    metalbls = zeros(size(nfo(1,:)));
-    metalbls(nfo(1,:) == actions(d)) = 1;
-    metalbls(nfo(1,:) ~= actions(d)) = 2;
+for d = 1:length(actions)
+    
+    dicinds = D(inds(nfo(1,:)),d)';
+    dicdata = [data(dicinds == 1), data(dicinds == 2)];
     
     for i = 1:size(C)
         TSTART = tic;
-        [results, models] = validateTiedMixLeftrightHMM(data, [metalbls; nfo(2:end,:)], ...
+        results = validateTiedMixLeftrightHMM(dicdata, [dicinds(dicinds > 0); nfo(2:end, dicinds > 0)], ...
             repmat([numHidStates],1,2), selfTransProb, C(i,:), ...
             normParam, projVar, ...
             emInit, covType, ...
             maxIter, verbose);
+        results.classes = actions';
+        results.metaclasses = D(:,d);
         results.time = toc(TSTART);
 
-        filename = sprintf(['%d-%.2f-', repmat(['%d-'], 1, 2),'%d-%.2f-%s-%s-', repmat(['%d'], 1, size(D,2)), '_%s.mat'], ...
+        filename = sprintf(['%d-%.2f-', repmat(['%d-'], 1, 2),'%d-%.2f-%s-%s_%s.mat'], ...
             numHidStates, selfTransProb, C(i,:), ...
             normParam(1,1), projVar, ...
-            emInit, covType, D(:,d), ...
+            emInit, covType, ...
             datestr(now, 30));
 
-        save(['output/results/', mfilename, '/results_', filename], 'results');
-        save(['output/models/', mfilename, '/models_', filename], 'models');
+        dicOutputDir = sprintf(['%sD', repmat('%d',1,length(D(:,d))), '/'], outputDir, D(:,d));
+        if ~exist(dicOutputDir, 'dir')
+            mkdir(dicOutputDir);
+        end
+        save([dicOutputDir, filename], 'results');
 
         fprintf('%s took %.3f s.\n', filename, results.time);
     end

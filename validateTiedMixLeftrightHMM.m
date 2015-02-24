@@ -1,4 +1,4 @@
-function [results, models] = validateTiedMixLeftrightHMM( data, nfo, ...
+function results = validateTiedMixLeftrightHMM( data, nfo, ...
     numHidStates, selfTransProb, numMixtures, ...
     normParams, projVar, emInit, covType, maxIter, verbose)
 %validedTiedMixLeftrightHMM Validate a tied mix leftright using LOSOCV
@@ -86,6 +86,7 @@ results.preds = preds;
 results.likes = likes;
 results.paths = paths;
 results.outsampleAccs = outsampleAccs;
+results.models = models;
 
 end
 
