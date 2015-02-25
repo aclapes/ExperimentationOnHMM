@@ -99,7 +99,10 @@ for t = T
             % train the combinations in the partition
             for i = 1:size(C,1)                
                 params.tiedMixParams.numMixtures = C(i,:); % only validating this param
-                dicProcDataTrTr = preprocessData(dicDataTrTr, params);
+                
+                % preprocessing: scaling, pca projection, and so on 
+                [dicProcDataTrTr, dicProcDataVal] = preprocessData(dicDataTrTr, dicDataVal, params);
+                
                 % train learners
                 addpath(genpath(hmmLibPath));
                 lambdas = trainTiedMixLeftrightHMM(dicProcDataTrTr, dicNFOTrTr, params, verbose); 
@@ -110,6 +113,17 @@ for t = T
                 dicValModels{i,j}.hmms   = lambdas;
             end
         end
+        
+        for j = 1:CVO.NumTestSets
+            dicDataVal            = dicDataTr(CVO.test(j));
+            dicNFOVal.categories  = dicNFOTr.categories(CVO.test(j));
+            dicNFOVal.subjects    = dicNFOTr.subjects(CVO.test(j)); 
+            for i = 1:size(C,1)  
+                testTiedMixLeftrightHMM(dicValModels{i,j}, 
+            end
+        end
+        
+        
         dicElapsedTime = toc(TSTART); 
         disp(sprintf('It took %.2f s.', dicElapsedTime));
         
@@ -122,20 +136,6 @@ for t = T
         
         filepath = sprintf('%s/TEtmp/d%d.mat', outputDir, t);
         save(filepath, 'dicOutput');
-        
-        for j = 1:CVO.NumTestSets
-            dicDataVal            = dicDataTr(CVO.test(j));
-            dicNFOVal.categories  = dicNFOTr.categories(CVO.test(j));
-            dicNFOVal.subjects    = dicNFOTr.subjects(CVO.test(j)); 
-            for i = 1:size(C,1)  
-                                
-                % preprocessing: scaling, pca projection, and so on 
-                [dicProcDataTrTr, dicProcDataVal] = preprocessData(dicDataTrTr, dicDataVal, params);
-                
-                predictions = testTiedMixLeftrightHMM(dicValModels{i,j}, dicDataVal, dicNFOVal, params, verbose);
-                
-            end
-        end
         
         % Save in the general structure
         trainFoldOutput.dicOutputs{d} = dicOutput;
