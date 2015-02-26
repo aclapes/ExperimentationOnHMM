@@ -3,11 +3,11 @@
 %
 
 % Data resources paths
-dataPath = '../MSRAction3DSkeletonReal3D/';
+dataPath = '/Users/aclapes/Documents/Code/MATLAB/MSRAction3DSkeletonReal3D/';
 addpath(genpath(dataPath));
 
 % Third-party libraries' paths
-hmmLibPath = '../Libs/HMMall/';
+hmmLibPath = '/Users/aclapes/Documents/Code/MATLAB/Libs/HMMall/';
 rmpath(genpath(hmmLibPath));
 
 % My auxiliar libraries' paths

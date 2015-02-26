@@ -85,4 +85,3 @@ function [predsTe, lambdas, loglikesTe, pathsTe] = predictTiedMixLeftrightHMM( o
     
     rmpath(genpath('../Libs/HMMall/'));
 end
-

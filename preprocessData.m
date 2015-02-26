@@ -2,7 +2,9 @@ function varargout = preprocessData( dataTr, params, varargin )
 %PREPROCESSDATA Summary of this function goes here
 %   Detailed explanation goes here
 
-
+if nargin > 2
+    dataTe = varargin{1};
+end
 %
 % Data normalisation/scaling
 %

@@ -1,11 +1,11 @@
-function models = trainTiedMixLeftrightHMM( dataTr,  nfoTr, ...
+function lambdas = trainTiedMixLeftrightHMM( dataTr,  nfoTr, ...
     params, verbose)
 %     numHidStates, selfTransProb, numMixtures, ...
 %     normParams, projVar, emInit, covType, maxIter, verbose)
 %validedTiedMixLeftrightHMM Validate a tied mix leftright using LOSOCV
 
-classes  = unique(nfoTr.categories);
-models = cell(1, length(classes));
+classes = unique(nfoTr.categories);
+lambdas = cell(1, length(classes));
 
 %
 % Training of the HMM
@@ -13,6 +13,8 @@ models = cell(1, length(classes));
    
 for m = 1:length(classes)
     c = classes(m); % get the class label
+    lambdas{m}.id = c;
+
     % filter the class data in training
     classDataTr = dataTr(nfoTr.categories == c); 
 
@@ -42,7 +44,7 @@ for m = 1:length(classes)
     model0.mixmat = mk_stochastic(rand(params.numHidStates(m),params.tiedMixParams.numMixtures(m)));
 
     % actual training
-    [~, models{m}.Pi, models{m}.A, models{m}.mu, models{m}.Sigma, models{m}.mixmat] = mhmm_em( ...
+    [~, lambdas{m}.Pi, lambdas{m}.A, lambdas{m}.mu, lambdas{m}.Sigma, lambdas{m}.mixmat] = mhmm_em( ...
         classDataTr, model0.Pi, model0.A, ...
         model0.mu, model0.Sigma, model0.mixmat, ...
         'max_iter', params.maxIter, 'verbose', 0, 'cov_type', params.tiedMixParams.covType);

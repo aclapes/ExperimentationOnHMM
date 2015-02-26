@@ -53,10 +53,6 @@ outputDir = ['output/results/', mfilename]; % mfilename returns the script name
 if ~exist(outputDir, 'dir')
     mkdir(outputDir);
 end
-tmpDir = [outputDir, '/TEtmp/'];
-if ~exist(tmpDir, 'dir')
-    mkdir(tmpDir);
-end
                 
 warning('off','all');
 
@@ -65,23 +61,28 @@ warning('off','all');
 
 for t = T     
     dataTr           = data(nfo.subjects ~= t);
-    nfoTr.categories    = nfo.categories(nfo.subjects ~= t);
+    nfoTr.categories = nfo.categories(nfo.subjects ~= t);
     nfoTr.subjects   = nfo.subjects(nfo.subjects ~= t);
     
     dicOutputs = cell( 1, size(D,2) ); 
 
+    tmpDir = sprintf('%s/F%d-tmp', outputDir, t);
+    if ~exist(tmpDir, 'dir')
+        mkdir(tmpDir);
+    end
     disp(sprintf('In fold %d', t));
 
     for d = 1:size(D,2)
         dicIndsTr = D(inds(nfoTr.categories),d)'; % double LUT(-ing)
         
-        dicDataTr         = [dataTr(dicIndsTr == 1), dataTr(dicIndsTr == 2)];
-        dicNFOTr.categories  = [nfoTr.categories(dicIndsTr == 1),  nfoTr.categories(dicIndsTr == 2)];
-        dicNFOTr.subjects = [nfoTr.subjects(dicIndsTr == 1), nfoTr.subjects(dicIndsTr == 2)];
+        dicDataTr           = [dataTr(dicIndsTr == 1), dataTr(dicIndsTr == 2)];
+        dicNFOTr.categories = [dicIndsTr(dicIndsTr == 1),  dicIndsTr(dicIndsTr == 2)];
+        dicNFOTr.subjects   = [nfoTr.subjects(dicIndsTr == 1), nfoTr.subjects(dicIndsTr == 2)];
         
         % train and keep models, that are {combinations x internal folds x
         % metaclasses} structures
         dicValModels = cell(size(C,1), numValidationFolds); % i.e. all the models in the dichotomy
+        dicValAccuracies = zeros(size(C,1), numValidationFolds);
         
         % (inner) k-fold cross validation 
         % (stratified by actions and subjects altogether)
@@ -91,60 +92,54 @@ for t = T
         
         TSTART = tic;
         for j = 1:CVO.NumTestSets
-            % internal partition
+            
             dicDataTrTr            = dicDataTr(CVO.training(j));
             dicNFOTrTr.categories  = dicNFOTr.categories(CVO.training(j));
             dicNFOTrTr.subjects    = dicNFOTr.subjects(CVO.training(j));
+            
+            dicDataVal            = dicDataTr(CVO.test(j));
+            dicNFOVal.categories  = dicNFOTr.categories(CVO.test(j));
+            dicNFOVal.subjects    = dicNFOTr.subjects(CVO.test(j));
                                   
             % train the combinations in the partition
             for i = 1:size(C,1)                
                 params.tiedMixParams.numMixtures = C(i,:); % only validating this param
-                dicProcDataTrTr = preprocessData(dicDataTrTr, params);
-                % train learners
+                [dicProcDataTrTr, dicProcDataVal] = preprocessData(dicDataTrTr, params, dicDataVal);
+                
+                % train model and validate its performance
                 addpath(genpath(hmmLibPath));
                 lambdas = trainTiedMixLeftrightHMM(dicProcDataTrTr, dicNFOTrTr, params, verbose); 
+                [preds.metacategories, preds.loglikes] = testTiedMixLeftrightHMM(lambdas, dicProcDataVal);
                 rmpath(genpath(hmmLibPath)); % interfieres with MATLAB functions (e.g. princomp)
                 
-                % a model consists of parameters and learners (lambdas)
-                dicValModels{i,j}.params = params;
-                dicValModels{i,j}.hmms   = lambdas;
+                dicValModels{i,j}.params    = params;
+                dicValModels{i,j}.lambdas   = lambdas;
+                dicValModels{i,j}.preds     = preds;
+                dicValAccuracies(i,j) = accuracy(dicNFOVal.categories, preds.metacategories);
             end
         end
         dicElapsedTime = toc(TSTART); 
         disp(sprintf('It took %.2f s.', dicElapsedTime));
         
         % Save dichotomy's results in a file
-        dicOutput.CVO          = CVO;
-        dicOutput.categories   = categoriesInExpt;
-        dicOutput.dic          = D(:,d);
-        dicOutput.models       = dicValModels;
-        dicOutput.elapsedTime  = dicElapsedTime;
+        dicOutput.CVO           = CVO;
+        dicOutput.categories    = categoriesInExpt;
+        dicOutput.dic           = D(:,d);
+        dicOutput.valModels     = dicValModels;
+        dicOutput.valAccuracies = dicValAccuracies;
+        dicOutput.elapsedTime   = dicElapsedTime;
         
-        filepath = sprintf('%s/TEtmp/d%d.mat', outputDir, t);
+        filepath = sprintf('%s/d%d.mat', tmpDir, d);
         save(filepath, 'dicOutput');
         
-        for j = 1:CVO.NumTestSets
-            dicDataVal            = dicDataTr(CVO.test(j));
-            dicNFOVal.categories  = dicNFOTr.categories(CVO.test(j));
-            dicNFOVal.subjects    = dicNFOTr.subjects(CVO.test(j)); 
-            for i = 1:size(C,1)  
-                                
-                % preprocessing: scaling, pca projection, and so on 
-                [dicProcDataTrTr, dicProcDataVal] = preprocessData(dicDataTrTr, dicDataVal, params);
-                
-                predictions = testTiedMixLeftrightHMM(dicValModels{i,j}, dicDataVal, dicNFOVal, params, verbose);
-                
-            end
-        end
-        
         % Save in the general structure
-        trainFoldOutput.dicOutputs{d} = dicOutput;
+        dicOutputs{d} = dicOutput;
     end
      
     % Save the test fold's results in a file
     trainFoldOutput.classifier                          = classifierName;
     trainFoldOutput.scheme                              = scheme;
-    trainFoldOutput.categories                             = categoriesInExpt;
+    trainFoldOutput.categories                          = categoriesInExpt;
     trainFoldOutput.D                                   = D;
     trainFoldOutput.params                              = params;
     trainFoldOutput.valParams.tiedMixParams.numMixtures = tiedMixParams.numMixtures;

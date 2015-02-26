@@ -18,7 +18,7 @@ for i = 1:length(categories)
 %             isempty(skeleton)
             if ~isempty(skeleton)
                 % Append to the data cell
-                nfo.categories     = [nfo.categories, c];
+                nfo.categories  = [nfo.categories, c];
                 nfo.subjects    = [nfo.subjects, s];
                 nfo.exampleIDs  = [nfo.exampleIDs, e];
                 data{1,end+1}   = skeleton;
