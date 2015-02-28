@@ -50,7 +50,7 @@ aux = repmat({tiedMixParams.numMixtures}, 1, 2);
 C = allcomb(aux{:}); % if using ECOC, it is numMixtures^2
 
 % Output results will be kept in a directory named as this script
-outputDir = ['output/results/', mfilename]; % mfilename returns the script name
+outputDir = ['output/results/', mfilename, 'onevsone']; % mfilename returns the script name
 if ~exist(outputDir, 'dir')
     mkdir(outputDir);
 end
@@ -152,7 +152,7 @@ warning('off','all');
 %     trainFoldOutput.params                              = params;
 %     trainFoldOutput.valParams.tiedMixParams.numMixtures = tiedMixParams.numMixtures;
 %     trainFoldOutput.numValidationFolds                  = numValidationFolds;
-%     trainFoldOutput.dicOutputs                          = dicValidations;
+%     trainFoldOutput.dicValidations                      = dicValidations;
 %     
 %     filepath = sprintf('%s/F%d.mat', outputDir, t);
 %     save(filepath, 'trainFoldOutput');
@@ -164,25 +164,32 @@ warning('off','all');
 
 %% DICHOTOMIES' MODEL SELECTION
 
+% disp('Model selection...');
+% 
+% P = zeros(size(C,1), numValidationFolds * length(subjects), size(D,2));
+% for i = 1:length(subjects) 
+%     s = subjects(i);
+% 
+%     filepathTr = sprintf('%s/F%d.mat', outputDir, s);
+%     load(filepathTr, 'trainFoldOutput');
+% 
+%     for d = 1:size(D,2)
+%         P(:,(i-1)*numValidationFolds+1:i*numValidationFolds,d) = ...
+%             trainFoldOutput.dicValidations{d}.valAccuracies;
+%     end
+% end
+% 
 % bestC = zeros(2, size(D,2));
 % for d = 1:size(D,2)
-%     P = zeros(size(C,1), numValidationFolds * length(subjects));
-%     for i = 1:length(subjects) 
-%         s = subjects(i);
-%         
-%         filepathTr = sprintf('%s/F%d.mat', outputDir, s);
-%         load(filepathTr, 'trainFoldOutput');
-%         
-%         P(:,(i-1)*numValidationFolds+1:i*numValidationFolds) = ...
-%             trainFoldOutput.dicOutputs{d}.valAccuracies;
-%     end
-%     [maxval, maxidx] = max(mean(P,2));
+%     [maxval, maxidx] = max(mean(P(:,:,d),2));
 %     bestC(:,d) = C(maxidx,:);
 % end
 
 
 %% DICHOTOMIES' FINAL MODELS CONSTRUCTION
 
+% disp('Final selected models training...');
+% 
 % for i = 1:length(subjects)  
 %     s = subjects(i);
 %     
@@ -193,8 +200,6 @@ warning('off','all');
 % 
 %     filepathTr = sprintf('%s/F%d.mat', outputDir, s);
 %     load(filepathTr, 'trainFoldOutput');
-%     
-%     disp(sprintf('Generating the %d-th fold final models...', i));
 %     
 %     teModels = cell(1,size(D,2));
 %     % Train the classifiers using the best combination of numMixtures
@@ -216,11 +221,11 @@ warning('off','all');
 %         teModels{d}.lambdas = lambdas;
 %     end
 %     
-%     trainFoldOutput.models = teModels;
+%     disp(sprintf('%d-th model trained.', i));
 %     
+%     trainFoldOutput.models = teModels;
 %     save(filepathTr, 'trainFoldOutput');
 % end
-
 
 
 %% TESTING
@@ -235,18 +240,21 @@ for i = 1:length(subjects)
     
     filepathTr = sprintf('%s/F%d.mat', outputDir, s);
     load(filepathTr, 'trainFoldOutput');
-    
-    [procDataTe] = preprocessData([], trainFoldOutput.models{i}.params.preprocParams, dataTe);
-    
+        
     predictions.metacategories = zeros(length(dataTe), size(D,2));
     % Train the classifiers using the best combination of numMixtures
     
     for d = 1:size(D,2)
+        [procDataTe] = preprocessData([], trainFoldOutput.models{d}.params.preprocParams, dataTe);
+
         addpath(genpath(hmmLibPath));
         [predictions.metacategories(:,d)] = ...
-            testTiedMixLeftrightHMM(trainFoldOutput.models{i}.lambdas, procDataTe); 
+            testTiedMixLeftrightHMM(trainFoldOutput.models{d}.lambdas, procDataTe); 
         rmpath(genpath(hmmLibPath)); % interfieres with MATLAB functions (e.g. princomp)
     end
+    
+    predictions.metacategories(predictions.metacategories == 2) = -1;
+    D(D == 2) = -1;
     
     S = pdist2(predictions.metacategories - 2, D - 2, distmetric);
     [minVals, minInds] = min(S, [], 2);
