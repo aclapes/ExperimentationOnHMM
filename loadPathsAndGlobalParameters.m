@@ -3,11 +3,11 @@
 %
 
 % Data resources paths
-dataPath = '/Users/aclapes/Documents/Code/MATLAB/MSRAction3DSkeletonReal3D/';
+dataPath = '../MSRAction3DSkeletonReal3D/';
 addpath(genpath(dataPath));
 
 % Third-party libraries' paths
-hmmLibPath = '/Users/aclapes/Documents/Code/MATLAB/Libs/HMMall/';
+hmmLibPath = '../Libs/HMMall/';
 rmpath(genpath(hmmLibPath));
 
 % My auxiliar libraries' paths
@@ -33,12 +33,13 @@ velOffset = 2; % Velocity computation respect to position in 'offset' frames ago
 
 classifierName = 'TiedMixContinuousLeftrightHMM';
 
+params.preprocParams.normParams     = [1 0]; % data normalisation/scaling
+params.preprocParams.projVar        = 0.9; % data projection/dim.red
+
 % General HMM parametrisation
 params.numHidStates     = [5, 5];
 params.selfTransProb    = 0.7;
 params.maxIter          = 50;
 % (and parameters of a tiedmix continuous HMM)
-params.tiedMixParams.normParams     = [1 0]; % data normalisation/scaling
-params.tiedMixParams.projVar        = 0.9; % data projection/dim.red
 params.tiedMixParams.emInit         = 'rnd'; % Mix components initial centers (random or kmeans)
 params.tiedMixParams.covType        = 'diag'; % Mixtures cov matrices form

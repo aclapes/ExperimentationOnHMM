@@ -29,8 +29,9 @@ for i = 1:size(data,2)
 end
 
 varargout{1} = preds;
-varargout{2} = loglikes;
-if nargout > 2
+if nargout > 1
+    varargout{2} = loglikes;
+else if nargout > 2
     varargout{3} = paths;
 end
 

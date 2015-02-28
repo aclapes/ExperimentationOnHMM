@@ -39,12 +39,11 @@ end
 %
 
 if params.projVar > 0
-    if ~isempty(dataTr)
-        [dataTr, params.projMat] = dimreduction(dataTr, params.projVar);
-    end
+    [dataTr, E] = dimreduction(dataTr, params.projVar);
     if nargin > 2
-        dataTe = dimreduction(dataTe, params.projMat);
+        dataTe = dimreduction(dataTe, E);
     end
+    params.projMat = E;
 end
 
 if ~isempty(dataTr)
@@ -54,7 +53,7 @@ if ~isempty(dataTr)
         varargout{end+1} = dataTe;
     end
 else
-    varargout{1} = dataTe;
+    
 end
 
 
