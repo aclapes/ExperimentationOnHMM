@@ -7,6 +7,13 @@ function lambdas = trainTiedMixLeftrightHMM( dataTr,  nfoTr, ...
 classes = unique(nfoTr.categories);
 lambdas = cell(1, length(classes));
 
+if prod(size(params.numHidStates)) == 1
+    params.numHidStates = repmat(params.numHidStates, 1, length(classes));
+end
+if prod(size(params.selfTransProb)) == 1
+    params.selfTransProb = repmat(params.selfTransProb, 1, length(classes));
+end
+
 %
 % Training of the HMM
 %
@@ -38,7 +45,7 @@ for m = 1:length(classes)
 
     % create the initial HMM model: model0
     model0.Pi = normalise([1; zeros(params.numHidStates(m)-1,1)]);
-    model0.A = mk_leftright_transmat(params.numHidStates(m),params.selfTransProb);
+    model0.A = mk_leftright_transmat(params.numHidStates(m),params.selfTransProb(m));
     model0.mu = reshape(model0.mu, [O params.numHidStates(m) params.tiedMixParams.numMixtures(m)]);
     model0.Sigma = reshape(model0.Sigma, [O O params.numHidStates(m) params.tiedMixParams.numMixtures(m)]);
     model0.mixmat = mk_stochastic(rand(params.numHidStates(m),params.tiedMixParams.numMixtures(m)));

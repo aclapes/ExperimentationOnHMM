@@ -25,7 +25,7 @@ for i = 1:size(data,2)
     end
     % Prediction is mAP estimate
     [~, mAP] = max(loglikes(:,i)); % mAP
-    preds(i) = classes(mAP);
+    preds(i) = lambdas{mAP}.id;
 end
 
 varargout{1} = preds;

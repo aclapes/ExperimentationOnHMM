@@ -3,11 +3,11 @@
 %
 
 % Data resources paths
-dataPath = '../MSRAction3DSkeletonReal3D/';
+dataPath = '/Users/aclapes/Documents/Code/MATLAB/MSRAction3DSkeletonReal3D/';
 addpath(genpath(dataPath));
 
 % Third-party libraries' paths
-hmmLibPath = '../Libs/HMMall/';
+hmmLibPath = '/Users/aclapes/Documents/Code/MATLAB/Libs/HMMall/';
 rmpath(genpath(hmmLibPath));
 
 % My auxiliar libraries' paths
@@ -37,7 +37,7 @@ params.preprocParams.normParams     = [1 0]; % data normalisation/scaling
 params.preprocParams.projVar        = 0.9; % data projection/dim.red
 
 % General HMM parametrisation
-params.numHidStates     = [5, 5];
+params.numHidStates     = 5;
 params.selfTransProb    = 0.7;
 params.maxIter          = 50;
 % (and parameters of a tiedmix continuous HMM)
