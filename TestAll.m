@@ -20,9 +20,13 @@ scheme = 'MLE';
 
 % Validation parameters
 
-tiedMixParams.numMixtures = [1 2 3 5 10 20];
+tiedMixParams.numMixtures = [1 2 3 5];
 numValidationFolds = 3;
 verbose = 0;
+
+% Test parameters
+
+numFinalModelReplicas = 3;
 
 
 %% Load data
@@ -78,7 +82,7 @@ for i = 1:length(subjects)
     
     valModels = cell(size(C,1), CVO.NumTestSets);
     valAccuracies = zeros(size(C,1), CVO.NumTestSets);
-    T = [];
+
     TSTART = tic;
     for j = 1:CVO.NumTestSets
 
@@ -104,7 +108,6 @@ for i = 1:length(subjects)
             valModels{i,j}.lambdas   = lambdas;
             valModels{i,j}.preds     = preds;
             valAccuracies(i,j) = accuracy(nfoVal.categories, preds.categories);
-            T = [T; toc(TSTART2)];
         end
     end
     elapsedTime = toc(TSTART); 
@@ -125,7 +128,7 @@ for i = 1:length(subjects)
     save(filepath, 'trainFoldOutput');
     
     % Remove temporary files
-    delete([tmpDir, '/*.mat']);
+    % delete([tmpDir, '/*.mat']);
 end
 
 
@@ -197,97 +200,57 @@ end
 
 %% TESTING
 
-for i = 1:length(subjects)
-    s = subjects(i);
-    
-    % Test data and info
-    dataTe           = data(nfo.subjects == s);
-    nfoTe.categories = nfo.categories(nfo.subjects == s);
-    nfoTe.subjects   = nfo.subjects(nfo.subjects == s);
-    
-    filepathTr = sprintf('%s/F%d.mat', outputDir, s);
-    load(filepathTr, 'trainFoldOutput');
-        
-    predictions.metacategories = zeros(length(dataTe), size(D,2));
-    % Train the classifiers using the best combination of numMixtures
-    
-    for d = 1:size(D,2)
-        [procDataTe] = preprocessData([], trainFoldOutput.models{d}.params.preprocParams, dataTe);
-
-        addpath(genpath(hmmLibPath));
-        [predictions.metacategories(:,d)] = ...
-            testTiedMixLeftrightHMM(trainFoldOutput.models{d}.lambdas, procDataTe); 
-        rmpath(genpath(hmmLibPath)); % interfieres with MATLAB functions (e.g. princomp)
-    end
-    
-    predictions.metacategories(predictions.metacategories == 2) = -1;
-    D(D == 2) = -1;
-    
-    S = pdist2(predictions.metacategories, D, distmetric);
-    [minVals, minInds] = min(S, [], 2);
-    predictions.categories = categoriesInExpt(minInds);
-    accs = accuracy(nfoTe.categories, predictions.categories)
-    
-    testFoldOutput.classifierName                      = classifierName;
-    testFoldOutput.scheme                              = scheme;
-    testFoldOutput.D                                   = D;
-    testFoldOutput.distmetric                          = distmetric;
-    testFoldOutput.params                              = params;
-    testFoldOutput.valParams.tiedMixParams.numMixtures = tiedMixParams.numMixtures;
-    testFoldOutput.numValidationFolds                  = numValidationFolds;
-    testFoldOutput.predictions                         = predictions;
-    testFoldOutput.accuracy                            = accs ;
-    
-    filepathTe = sprintf('%s/P%d.mat', outputDir, s);
-    save(filepathTe, 'testFoldOutput');
-end
-
-outsampleAccs = zeros(1, length(subjects));
-for i = 1:length(subjects)
-    filepathTe = sprintf('%s/P%d.mat', outputDir, subjects(i));
-    load(filepathTe, 'testFoldOutput');
-    
-    outsampleAccs(i) = testFoldOutput.accuracy;
-end
-m = mean(outsampleAccs)
-ci = 2.26 * std(outsampleAccs)/sqrt(length(subjects))
-
-% for t = 1:length(actions)    
-%     dataTe = data(nfo(2,:) == t);
-%     nfoTe = nfo(:, nfo(2,:) == t);
+% for i = 1:length(subjects)
+%     s = subjects(i);
 %     
-%     for d = 1:length(actions)
-%         dicIndsTe = D(inds(nfoTe(1,:)),d)'; % again
-%         dicDataTe = [dataTe(dicIndsTe == 1), dataTe(dicIndsTe == 2)];
-%         dicNfoTe = [nfoTe(:,dicIndsTe == 1), nfoTe(:,dicIndsTe == 2)];
+%     % Test data and info
+%     dataTe           = data(nfo.subjects == s);
+%     nfoTe.categories = nfo.categories(nfo.subjects == s);
+%     nfoTe.subjects   = nfo.subjects(nfo.subjects == s);
+%     
+%     filepathTr = sprintf('%s/F%d.mat', outputDir, s);
+%     load(filepathTr, 'trainFoldOutput');
 %         
+%     predictions.metacategories = zeros(length(dataTe), size(D,2));
+%     % Train the classifiers using the best combination of numMixtures
+%     
+%     for d = 1:size(D,2)
+%         [procDataTe] = preprocessData([], trainFoldOutput.models{d}.params.preprocParams, dataTe);
+% 
+%         addpath(genpath(hmmLibPath));
+%         [predictions.metacategories(:,d)] = ...
+%             testTiedMixLeftrightHMM(trainFoldOutput.models{d}.lambdas, procDataTe); 
+%         rmpath(genpath(hmmLibPath)); % interfieres with MATLAB functions (e.g. princomp)
 %     end
+%     
+%     predictions.metacategories(predictions.metacategories == 2) = -1;
+%     D(D == 2) = -1;
+%     
+%     S = pdist2(predictions.metacategories, D, distmetric);
+%     [minVals, minInds] = min(S, [], 2);
+%     predictions.categories = categoriesInExpt(minInds);
+%     accs = accuracy(nfoTe.categories, predictions.categories)
+%     
+%     testFoldOutput.classifierName                      = classifierName;
+%     testFoldOutput.scheme                              = scheme;
+%     testFoldOutput.D                                   = D;
+%     testFoldOutput.distmetric                          = distmetric;
+%     testFoldOutput.params                              = params;
+%     testFoldOutput.valParams.tiedMixParams.numMixtures = tiedMixParams.numMixtures;
+%     testFoldOutput.numValidationFolds                  = numValidationFolds;
+%     testFoldOutput.predictions                         = predictions;
+%     testFoldOutput.accuracy                            = accs ;
+%     
+%     filepathTe = sprintf('%s/P%d.mat', outputDir, s);
+%     save(filepathTe, 'testFoldOutput');
 % end
-
-%         dataTrTr = dataTr(
-
-%         for i = 1:size(C)
-%             TSTART = tic;
-%             results = validateTiedMixLeftrightHMM(dicdata, [dicinds(dicinds > 0); nfo(2:end, dicinds > 0)], ...
-%                 repmat([numHidStates],1,2), selfTransProb, C(i,:), ...
-%                 normParam, projVar, ...
-%                 emInit, covType, ...
-%                 maxIter, verbose);
-%             results.classes = actions';
-%             results.metaclasses = D(:,d);
-%             results.time = toc(TSTART);
 % 
-%             filename = sprintf(['%d-%.2f-', repmat(['%d-'], 1, 2),'%d-%.2f-%s-%s_%s.mat'], ...
-%                 numHidStates, selfTransProb, C(i,:), ...
-%                 normParam(1,1), projVar, ...
-%                 emInit, covType, ...
-%                 datestr(now, 30));
-% 
-%             dicOutputDir = sprintf(['%sD', repmat('%d',1,length(D(:,d))), '/'], outputDir, D(:,d));
-%             if ~exist(dicOutputDir, 'dir')
-%                 mkdir(dicOutputDir);
-%             end
-%             save([dicOutputDir, filename], 'results');
-% 
-%             fprintf('%s took %.3f s.\n', filename, results.time);
-%         end
+% outsampleAccs = zeros(1, length(subjects));
+% for i = 1:length(subjects)
+%     filepathTe = sprintf('%s/P%d.mat', outputDir, subjects(i));
+%     load(filepathTe, 'testFoldOutput');
+%     
+%     outsampleAccs(i) = testFoldOutput.accuracy;
+% end
+% m = mean(outsampleAccs)
+% ci = 2.26 * std(outsampleAccs)/sqrt(length(subjects))

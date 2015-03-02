@@ -26,7 +26,7 @@ D = codingECOC(scheme, length(categoriesInExpt)); % ECOC dichotomies' coding mat
 
 % Validation parameters
 
-tiedMixParams.numMixtures = [1 2 3 5 10 20];
+tiedMixParams.numMixtures = [1 2 3 5];
 numValidationFolds = 3;
 verbose = 0;
 
