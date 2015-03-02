@@ -108,10 +108,11 @@ for i = 1:length(subjects)
             valModels{i,j}.lambdas   = lambdas;
             valModels{i,j}.preds     = preds;
             valAccuracies(i,j) = accuracy(nfoVal.categories, preds.categories);
+            elapsedTime = toc(TSTART2);
+            disp(sprintf('Internal fold: %d, param comb: %d. It took %.2f s.', j, i, elapsedTime));
         end
     end
     elapsedTime = toc(TSTART); 
-    disp(sprintf('It took %.2f s.', elapsedTime));
         
     trainFoldOutput.classifier                          = classifierName;
     trainFoldOutput.scheme                              = scheme;
@@ -119,6 +120,7 @@ for i = 1:length(subjects)
     trainFoldOutput.params                              = params;
     trainFoldOutput.valParams.tiedMixParams.numMixtures = tiedMixParams.numMixtures;
     trainFoldOutput.numValidationFolds                  = numValidationFolds;
+    trainFoldOutput.elapsedTime                         = elapsedTime;
     
     validations.valModels = valModels;
     validations.valAccuracies = valAccuracies;
